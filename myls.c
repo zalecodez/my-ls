@@ -31,8 +31,6 @@ int main(int argc, char* argv[]){
 	//extract options from the command line arguments
 	//set boolean variables listAll and listLong to encode whether those options were present
 	while((opt = getopt(argc, argv, "al")) != -1){
-		optcount++;
-
 		switch(opt){
 			case('a'):
 				listAll = true;
@@ -42,6 +40,13 @@ int main(int argc, char* argv[]){
 				break;
 			default:
 				break;
+		}
+	}
+
+	//check the number of option arguments (starting with '-')
+	for(int i = 1; i < argc; i++){
+		if(argv[i][0] == '-'){
+			optcount++;
 		}
 	}
 
@@ -67,7 +72,9 @@ int main(int argc, char* argv[]){
 				//if the file is a directory then read it's contents and list the files inside
 				//otherwise just list the file
 				if((sb.st_mode & S_IFMT) == S_IFDIR){
-					printf("%s:\n",filename);
+					if(argc - optcount > 2){
+						printf("%s:\n",filename);
+					}
 					listDir(filename, listAll, listLong);
 					printf("\n");
 				}
