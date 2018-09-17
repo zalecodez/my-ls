@@ -10,6 +10,8 @@
 #include <string.h>
 #include <time.h>
 
+#define MAX_STR_LENGTH 256
+#define MAX_TIME_LENGTH 20
 
 void listDir(char*, bool, bool);
 void listFile(char*, bool);
@@ -23,6 +25,8 @@ int main(int argc, char* argv[]){
 	struct stat sb;
 	int opt, optcount=0;
 	bool listAll = false, listLong = false; 
+
+	char filename[MAX_STR_LENGTH];
 
 	//extract options from the command line arguments
 	//set boolean variables listAll and listLong to encode whether those options were present
@@ -48,27 +52,27 @@ int main(int argc, char* argv[]){
 	else{
 		//go through each command line argument
 		for(int i = 1; i < argc; i++){
-			char* file = argv[i];
+			strncpy(filename, argv[i], MAX_STR_LENGTH);
 			
 			//exclude option arguments
-			if(file[0] == '-'){
+			if(filename[0] == '-'){
 				continue;
 			}
 			
 			//make sure filename is valid
-			if(stat(file, &sb) == -1){
-				perror(file);
+			if(stat(filename, &sb) == -1){
+				perror(filename);
 			}
 			else{
 				//if the file is a directory then read it's contents and list the files inside
 				//otherwise just list the file
 				if((sb.st_mode & S_IFMT) == S_IFDIR){
-					printf("%s:\n",file);
-					listDir(file, listAll, listLong);
+					printf("%s:\n",filename);
+					listDir(filename, listAll, listLong);
 					printf("\n");
 				}
 				else{
-					listFile(file, listLong);
+					listFile(filename, listLong);
 				}
 			}
 		}
@@ -121,9 +125,9 @@ void listFile(char* filename, bool listLong){
 	struct stat sb;
 	char permissionString[11]; 
 
-	char username[256], groupname[256];
+	char username[MAX_STR_LENGTH], groupname[MAX_STR_LENGTH];
 
-	char timestring[20];
+	char timestring[MAX_TIME_LENGTH];
 
 	//check if the -l option was used
 	if(listLong){
@@ -162,10 +166,10 @@ void getModTime(struct stat sb, char* timestring){
 
 	//if the file was last modified during the current year, show the time, else show the year
 	if(currentYear == fileYear){
-		strftime(timestring, 20, "%b %d %R", timestamp);
+		strftime(timestring, MAX_TIME_LENGTH, "%b %d %R", timestamp);
 	}
 	else{
-		strftime(timestring, 20, "%b %d %Y", timestamp);
+		strftime(timestring, MAX_TIME_LENGTH, "%b %d %Y", timestamp);
 	}
 }
 
@@ -175,7 +179,7 @@ void getGroupName(struct stat sb, char* groupname){
 
 	groupInfo = getgrgid(sb.st_gid);	
 
-	strcpy(groupname, groupInfo->gr_name);
+	strncpy(groupname, groupInfo->gr_name, MAX_STR_LENGTH);
 }
 
 //returns the username of the file's owner from the file's stats
@@ -183,7 +187,7 @@ void getUserName(struct stat sb, char* username){
 	struct passwd *userInfo;
 
 	userInfo = getpwuid(sb.st_uid);	
-	strcpy(username, userInfo->pw_name);
+	strncpy(username, userInfo->pw_name, MAX_STR_LENGTH);
 }
 
 //reads a directory to read each file it contains
