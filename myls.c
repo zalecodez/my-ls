@@ -14,7 +14,7 @@
 #define MAX_TIME_LENGTH 20
 
 void listDir(char*, bool, bool);
-void listFile(char*, bool);
+void listFile(char*, char*, bool);
 void getPermissions(struct stat, char*);
 void getUserName(struct stat, char*);
 void getGroupName(struct stat, char*);
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]){
 					printf("\n");
 				}
 				else{
-					listFile(filename, listLong);
+					listFile(".",filename, listLong);
 				}
 			}
 		}
@@ -128,18 +128,28 @@ void getPermissions(struct stat sb, char* permissionString){
 }
 
 //list a file's info (just the filename if listLong is false)
-void listFile(char* filename, bool listLong){
+void listFile(char* dirname, char* filename, bool listLong){
 	struct stat sb;
+
+	char fullPath[2*MAX_STR_LENGTH];
 	char permissionString[11]; 
 
 	char username[MAX_STR_LENGTH], groupname[MAX_STR_LENGTH];
 
 	char timestring[MAX_TIME_LENGTH];
 
+
+
 	//check if the -l option was used
 	if(listLong){
-		stat(filename, &sb);
+		strcpy(fullPath, dirname);
+		strcat(fullPath, "/");
+		strcat(fullPath, filename);
 
+		if(stat(fullPath, &sb) == -1){
+			perror(filename);
+			return;
+		}
 		getPermissions(sb, permissionString);
 
 		getUserName(sb, username);
@@ -201,6 +211,7 @@ void getUserName(struct stat sb, char* username){
 void listDir(char* dirname, bool listAll, bool listLong){
 	DIR* dirp;
 	struct dirent *dirEntry;
+	char* filename;
 
 	//check if the directory opens successfully
 	if((dirp = opendir(dirname)) == NULL){
@@ -209,16 +220,17 @@ void listDir(char* dirname, bool listAll, bool listLong){
 	else{
 		//go through each item in the directory
 		while((dirEntry = readdir(dirp)) != NULL){
-			char* filename = dirEntry->d_name;
+			filename = dirEntry->d_name;
 
 			//only list hidden files (. files) if the -a option was used (ie listAll is true)
 			if(filename[0] == '.'){
 				if(listAll){
-					listFile(dirEntry->d_name, listLong);
+					listFile(dirname, filename, listLong);
 				}
 			}else{
-				listFile(dirEntry->d_name, listLong);
+				listFile(dirname, filename, listLong);
 			}
+
 		}
 		//cleanup
 		closedir(dirp);
